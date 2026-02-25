@@ -30,6 +30,7 @@ class Message:
     mentions: list[User] = field(default_factory=list)
     pinned: bool = False
     reactions: list[Reaction] = field(default_factory=list)
+    referenced_message: Message | None = None
 
     _http: HTTPClient | None = field(default=None, repr=False)
     _channel: Channel | None = field(default=None, repr=False)
@@ -56,6 +57,7 @@ class Message:
             mentions=mentions,
             pinned=data.get("pinned", False),
             _http=http,
+            referenced_message=Message.from_data(data.get("referenced_message"), http) if data.get("referenced_message") else None,
         )
 
         # Parse reactions and link them to the message
