@@ -15,6 +15,7 @@ from .reaction import (
 )
 from .role import Role
 from .user import User
+from .voice import VoiceState
 from .webhook import Webhook
 
 __all__ = [
@@ -33,5 +34,6 @@ __all__ = [
     "Role",
     "UserProfile",
     "User",
+    "VoiceState",
     "Webhook",
 ]
