@@ -57,7 +57,9 @@ class Message:
             mentions=mentions,
             pinned=data.get("pinned", False),
             _http=http,
-            referenced_message=Message.from_data(data.get("referenced_message"), http) if data.get("referenced_message") else None,
+            referenced_message=Message.from_data(data.get("referenced_message"), http)
+            if data.get("referenced_message")
+            else None,
         )
 
         # Parse reactions and link them to the message
