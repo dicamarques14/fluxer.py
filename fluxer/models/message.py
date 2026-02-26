@@ -57,8 +57,8 @@ class Message:
             mentions=mentions,
             pinned=data.get("pinned", False),
             _http=http,
-            referenced_message=Message.from_data(data.get("referenced_message"), http)
-            if data.get("referenced_message")
+            referenced_message=Message.from_data(ref_data, http)
+            if (ref_data := data.get("referenced_message"))
             else None,
         )
 
