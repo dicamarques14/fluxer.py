@@ -1,3 +1,4 @@
+from .attachment import Attachment
 from .channel import Channel
 from .embed import Embed
 from .emoji import Emoji
@@ -14,9 +15,11 @@ from .reaction import (
 )
 from .role import Role
 from .user import User
+from .voice import VoiceState
 from .webhook import Webhook
 
 __all__ = [
+    "Attachment",
     "Channel",
     "Embed",
     "Emoji",
@@ -31,5 +34,6 @@ __all__ = [
     "Role",
     "UserProfile",
     "User",
+    "VoiceState",
     "Webhook",
 ]

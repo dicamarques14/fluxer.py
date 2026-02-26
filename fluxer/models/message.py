@@ -9,7 +9,9 @@ from ..utils import snowflake_to_datetime
 if TYPE_CHECKING:
     from ..file import File
     from ..http import HTTPClient
+    from .attachment import Attachment
     from .channel import Channel
+    from .guild import Guild
     from .reaction import PartialEmoji, Reaction
     from .user import User
 
@@ -26,21 +28,26 @@ class Message:
     edited_timestamp: str | None = None
     guild_id: int | None = None
     embeds: list[dict[str, Any]] = field(default_factory=list)
-    attachments: list[dict[str, Any]] = field(default_factory=list)
+    attachments: list[Attachment] = field(default_factory=list)
     mentions: list[User] = field(default_factory=list)
     pinned: bool = False
     reactions: list[Reaction] = field(default_factory=list)
 
     _http: HTTPClient | None = field(default=None, repr=False)
     _channel: Channel | None = field(default=None, repr=False)
+    _guild: Guild | None = field(default=None, repr=False)
 
     @classmethod
     def from_data(cls, data: dict[str, Any], http: HTTPClient | None = None) -> Message:
+        from .attachment import Attachment
         from .reaction import Reaction
         from .user import User
 
         author = User.from_data(data["author"], http)
         mentions = [User.from_data(u, http) for u in data.get("mentions", [])]
+        attachments = [
+            Attachment.from_data(a) for a in data.get("attachments", [])
+        ]
 
         # Create message first without reactions
         message = cls(
@@ -52,7 +59,7 @@ class Message:
             edited_timestamp=data.get("edited_timestamp"),
             guild_id=int(data["guild_id"]) if data.get("guild_id") else None,
             embeds=data.get("embeds", []),
-            attachments=data.get("attachments", []),
+            attachments=attachments,
             mentions=mentions,
             pinned=data.get("pinned", False),
             _http=http,
@@ -74,6 +81,11 @@ class Message:
     def channel(self) -> Channel | None:
         """The channel this message was sent in (if cached)."""
         return self._channel
+
+    @property
+    def guild(self) -> Guild | None:
+        """The guild this message was sent in (if cached)."""
+        return self._guild
 
     @staticmethod
     def _process_embed_args(kwargs: dict[str, Any]) -> dict[str, Any]:
@@ -148,7 +160,10 @@ class Message:
             files=file_list,
             **combined_kwargs,
         )
-        return Message.from_data(data, self._http)
+        msg = Message.from_data(data, self._http)
+        msg._channel = self._channel
+        msg._guild = self._guild
+        return msg
 
     async def reply(
         self,
@@ -202,7 +217,10 @@ class Message:
             files=file_list,
             **combined_kwargs,
         )
-        return Message.from_data(data, self._http)
+        msg = Message.from_data(data, self._http)
+        msg._channel = self._channel
+        msg._guild = self._guild
+        return msg
 
     async def send_to_channel(
         self,
@@ -249,7 +267,9 @@ class Message:
         data = await self._http.send_message(
             channel_id, content=content, files=file_list, **combined_kwargs
         )
-        return Message.from_data(data, self._http)
+        msg = Message.from_data(data, self._http)
+        msg._guild = self._guild
+        return msg
 
     async def edit(self, content: str | None = None, **kwargs: Any) -> Message:
         """Edit this message."""
@@ -258,7 +278,10 @@ class Message:
         data = await self._http.edit_message(
             self.channel_id, self.id, content=content, **kwargs
         )
-        return Message.from_data(data, self._http)
+        msg = Message.from_data(data, self._http)
+        msg._channel = self._channel
+        msg._guild = self._guild
+        return msg
 
     async def delete(self) -> None:
         """Delete this message."""

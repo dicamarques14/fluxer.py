@@ -338,6 +338,19 @@ class HTTPClient:
         params = {"guild_id": str(guild_id)} if guild_id else None
         return await self.request(route, params=params)
 
+    async def create_dm(self, user_id: int | str) -> dict[str, Any]:
+        """POST /users/@me/channels — Open a DM channel with a user.
+        Args:
+            user_id: The ID of the user to open a DM with.
+
+        Returns:
+            Channel object for the DM channel.
+        """
+        return await self.request(
+            self._route("POST", "/users/@me/channels"),
+            json={"recipient_id": str(user_id)},
+        )
+
     async def get_current_user_guilds(self) -> list[dict[str, Any]]:
         """GET /users/@me/guilds - get guilds the current user is in"""
         return await self.request(self._route("GET", "/users/@me/guilds"))
@@ -1479,8 +1492,15 @@ class HTTPClient:
         username: str | None = None,
         avatar_url: str | None = None,
         wait: bool = False,
+        files: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any] | None:
         """POST /webhooks/{webhook_id}/{token}"""
+        route = self._route(
+            "POST",
+            "/webhooks/{webhook_id}/{token}",
+            webhook_id=webhook_id,
+            token=token,
+        )
         payload: dict[str, Any] = {}
         if content is not None:
             payload["content"] = content
@@ -1491,13 +1511,25 @@ class HTTPClient:
         if avatar_url is not None:
             payload["avatar_url"] = avatar_url
         params = {"wait": "true"} if wait else None
+        if files:
+            form = aiohttp.FormData()
+            payload["attachments"] = [
+                {"id": i, "filename": file["filename"]} for i, file in enumerate(files)
+            ]
+            form.add_field(
+                "payload_json",
+                json_mod.dumps(payload),
+                content_type="application/json",
+            )
+            for i, file in enumerate(files):
+                form.add_field(
+                    f"files[{i}]",
+                    file["data"],
+                    filename=file["filename"],
+                )
+            return await self.request(route, data=form, params=params)
         return await self.request(
-            self._route(
-                "POST",
-                "/webhooks/{webhook_id}/{token}",
-                webhook_id=webhook_id,
-                token=token,
-            ),
+            route,
             json=payload,
             params=params,
         )

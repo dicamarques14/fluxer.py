@@ -41,6 +41,39 @@ pip install fluxer.py
 
 Requires Python 3.10 or higher.
 
+### Voice support
+
+Voice requires `LiveKit` and `ffmpeg`:
+
+``` sh
+pip install fluxer.py[voice]
+```
+
+or
+
+```sh
+uv add fluxer.py --extra voice
+```
+
+ffmpeg must be installed separately and available on your `PATH`.
+
+On macOS (assuming you have [Brew](https://brew.sh/)):
+
+``` sh
+brew install ffmpeg
+```
+
+On Debian/Ubuntu:
+
+``` sh
+apt install ffmpeg
+```
+
+On Windows: (assuming you have [Chocolatey](https://chocolatey.org/install))
+```sh
+choco install ffmpeg
+```
+
 For development:
 
 ```sh
@@ -115,14 +148,15 @@ Core components:
 
 `fluxer.py` provides strongly-typed models representing Fluxer entities:
 
-- `Guild`
-- `Channel`
-- `Message`
-- `User`
-- `GuildMember`
-- `Webhook`
-- `Embed`
-- `Emoji`
+-   `Guild`
+-   `Channel`
+-   `Message`
+-   `User`
+-   `GuildMember`
+-   `VoiceState`
+-   `Webhook`
+-   `Embed`
+-   `Emoji`
 
 Models encapsulate both state and behavior, exposing convenience methods
 such as:
@@ -132,6 +166,47 @@ such as:
 - `Guild.kick_member()`
 
 ---
+
+## Voice
+
+Requires `fluxer.py[voice]` and ffmpeg
+
+``` py
+@bot.command()
+async def play(ctx, channel_id: int, *, path: str):
+    channel = await bot.fetch_channel(str(channel_id))
+
+    async with await channel.connect(bot) as vc:
+        await vc.play_file(path)
+```
+
+For background playback with an `after` callback:
+
+``` py
+async with await channel.connect(bot) as vc:
+    vc.play(fluxer.FFmpegPCMAudio("music.mp3"), after=lambda e: print("done"))
+    # bot continues handling commands while audio plays
+```
+
+Pause and resume mid-playback:
+
+``` py
+vc.pause()
+vc.resume()
+print(vc.is_paused)  # bool
+```
+
+`FFmpegPCMAudio` accepts the same options as discord.py's `FFmpegPCMAudio`:
+
+| Parameter | Description |
+|---|---|
+| `executable` | Path to ffmpeg binary (default: `"ffmpeg"`) |
+| `before_options` | Arguments inserted before `-i` (e.g. `"-ss 30"` to seek) |
+| `options` | Arguments inserted after the source (e.g. `"-filter:a volume=0.5"`) |
+| `sample_rate` | Output sample rate in Hz (default: `48000`) |
+| `num_channels` | `1` for mono, `2` for stereo (default: `2`) |
+
+------------------------------------------------------------------------
 
 ## Intents
 

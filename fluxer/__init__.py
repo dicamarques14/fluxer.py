@@ -35,10 +35,19 @@ from .models import (
     Guild,
     GuildMember,
     Message,
+    Reaction,
+    Role,
     User,
     UserProfile,
+    VoiceState,
     Webhook,
 )
+
+# Voice support is optional so only import if available
+try:
+    from .voice import FFmpegPCMAudio, VoiceClient
+except ImportError:
+    pass
 
 # Utilities
 from .utils import datetime_to_snowflake, snowflake_to_datetime
@@ -77,10 +86,16 @@ __all__ = [
     "Guild",
     "GuildMember",
     "Message",
+    "Reaction",
+    "Role",
     "User",
     "UserProfile",
+    "VoiceState",
     "Webhook",
     # Utils
     "datetime_to_snowflake",
     "snowflake_to_datetime",
+    # Voice (present only when the 'voice' extra is installed)
+    "FFmpegPCMAudio",
+    "VoiceClient",
 ]
